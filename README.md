@@ -19,7 +19,7 @@ Known issues:
 # Import the Device Handlers and SmartApp into your account
 
 Follow the instructions from the SmartThings community to import the Device Handlers and Smartapp into your SmartThings account:
-https://community.smartthings.com/t/faq-github-integration-how-to-add-and-update-from-repositories/39046
+<a href="https://community.smartthings.com/t/faq-github-integration-how-to-add-and-update-from-repositories/39046" target="_blank">faq-github-integration-how-to-add-and-update-from-repositories</a>
 
 You will add the GitHub Repository:
 - Owner: PlaidSystems
