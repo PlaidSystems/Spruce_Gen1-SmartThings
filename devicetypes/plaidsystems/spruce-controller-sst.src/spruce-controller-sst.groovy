@@ -14,8 +14,7 @@
  
  Copy of SST except no "remote" type from Aeon
  Also added Water Sensor Capability
- 
- 
+  
  */
 metadata {
 	definition (name: "Spruce Controller SST", namespace: "plaidsystems", author: "plaidsystems") {
