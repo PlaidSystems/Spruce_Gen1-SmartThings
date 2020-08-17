@@ -1,5 +1,5 @@
 /**
- *  Spruce Scheduler Pre-release V2.55 - Updated 8/2019
+ *  Spruce Scheduler Pre-release V2.6 - Updated 8/2020
  *
  *
  *  Copyright 2015 Plaid Systems
