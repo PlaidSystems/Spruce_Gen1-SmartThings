@@ -16,12 +16,22 @@ Importing this code into the SmartThings IDE will bring back functionality as li
 Known issues:
 - Toggling a zone on or off does not refresh correctly, and shows "spinning/thinking" icon, however the zone does activate and toggling into the zone tile or out fo the zone tile will "refresh" the state
 
-# Experienced User Setup
+# Import the Device Handlers and SmartApp into your account
 
-This is the short version for those familiar with adding custom device and smartapps to SmartThings
+Follow the instructions from the SmartThings community to import the Device Handlers and Smartapp into your SmartThings account:
+https://community.smartthings.com/t/faq-github-integration-how-to-add-and-update-from-repositories/39046
 
-1. The device code must be copied/imported into your IDE account and published
-2. The smartapp code must be copied/imported into your IDE account and published
+You will add the GitHub Repository:
+- Owner: PlaidSystems
+- Name: Spruce_Gen1-SmartThings
+- Branch: Master
+
+Once complete, **Update from Repo**
+
+# Setup
+
+1. The device handler code **Spruce Controller SST, Spruce zone** must be copied/imported into your IDE account and published following the instructions above.
+2. The smartapp code **Spruce Scheduler SST** must be copied/imported into your IDE account and published following the instructions above.
 3. Remove the Spruce Controller from the app
 4. Add a new device with **Add Device** -> **Scan nearby** and then start the search on the Spruce controller
 5. The app will find **Spruce Controller**
