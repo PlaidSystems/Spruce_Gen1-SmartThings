@@ -18,9 +18,9 @@ Known issues:
 
 # Import the Device Handlers and SmartApp into your account
 
-Follow the instructions from either of the following links to import the Device Handlers and Smartapp into your SmartThings account:
+Follow the instructions from the following link to import the Device Handlers and Smartapp into your SmartThings account. The instructions and video are from Konnected, **Spruce is in no way affiliated with Konnected**
 - https://help.konnected.io/support/solutions/articles/32000022409-smartthings-enable-github-integration#:~:text=The%20easiest%20way%20to%20install%20the%20SmartApp%20and,and%20paste%20it%20manually%20into%20your%20SmartThings%20IDE
-- https://community.smartthings.com/t/faq-github-integration-how-to-add-and-update-from-repositories/39046
+- Video: https://help.konnected.io/support/solutions/articles/32000022474-video-konnected-smartthings-installation-and-setup
 
 You will add the GitHub Repository:
 - Owner: PlaidSystems
