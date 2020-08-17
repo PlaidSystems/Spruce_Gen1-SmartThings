@@ -1,9 +1,6 @@
+
 /**
- *  Spruce Controller Samsung App*
- *  Copyright 2020 Plaid Systems
- *
- *	Author: NC
- *	Date: 2020-8
+ *  Copyright 2020 PlaidSystems
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -15,217 +12,206 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  
+ Copy of SST except no "remote" type from Aeon
+ Also added Water Sensor Capability
+ 
+ 
  */
-
 metadata {
-	definition (name: 'Spruce Controller SST', namespace: 'plaidsystems', author: 'Plaid Systems') {
-		capability 'Switch'
-        capability 'Configuration'
-        capability 'Refresh'        
-        capability 'Health Check'
-		
-        attribute 'program', 'string'
-        attribute 'switch', 'string'
-        attribute 'switch1', 'string'
-		attribute 'switch2', 'string'
-        attribute 'switch3', 'string'
-        attribute 'switch4', 'string'
-		attribute 'switch5', 'string'
-        attribute 'switch6', 'string'
-        attribute 'switch7', 'string'
-		attribute 'switch8', 'string'
-				
-        attribute 'switch9', 'string'
-		attribute 'switch10', 'string'
-		attribute 'switch11', 'string'
-		attribute 'switch12', 'string'
-		attribute 'switch13', 'string'
-		attribute 'switch14', 'string'
-		attribute 'switch15', 'string'
-        attribute 'switch16', 'string'
-        attribute 'pause', 'string'
-		attribute 'rainsensor', 'string'
-        attribute 'status', 'string'
-        attribute 'tileMessage', 'string'
-        attribute 'minutes', 'string'
-        attribute 'VALUE_UP', 'string'
-        attribute 'VALUE_DOWN', 'string'        
+	definition (name: "Spruce Controller SST", namespace: "plaidsystems", author: "plaidsystems") {
+		capability "Switch"
+        capability "Actuator"
+        //capability "Switch Level"
+        capability "Water Sensor"
+        capability "Sensor"
         
-        command 'levelUp'
-        command 'levelDown'
+        capability "Configuration"
+        capability "Refresh"        
+        capability "Health Check"
+		                
+        
+        command "on"
+        command "off"        
+        command "childon"
+        command "childoff"
+        
+        command "wet"
+        command "dry"
+        
+        command "zon"
+        command "zoff"
         command 'programOn'
         command 'programOff'
         command 'programWait'
-        command 'programEnd'        
-        command 'pause'
-        command 'endpause'
-        command 'start'
+        command 'programEnd'
         
-        command 'zon'
-        command 'on'
-        command 'off'        
-        command 'zoneon'
-        command 'zoneoff'
-        
-        command 'config'
-        command 'refresh'        
-        command 'rain'
-        command 'manual'
-        command 'manualTime'
-        command 'settingsMap'
-        command 'writeTime'
-        command 'writeType'        
-        command 'notify'
-        command 'updated'      
-        
+        command "config"
+        command "refresh"        
+        command "rain"
+        command "manual"
+        command "manualTime"
+        command "settingsMap"
+        command "writeTime"
+        command "writeType"        
+        command "notify"
+        command "updated"
+
 		//new release
-        //fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,000F", outClusters: "0003, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRZ16-01", deviceJoinName: "Spruce Controller"
-        //fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,0009,000A,000F", outClusters: "0003, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRZ16-01", deviceJoinName: "Spruce Controller"
-		//fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,0009,000A,000F", outClusters: "0003, 0006, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRWIFI16-01", deviceJoinName: "Spruce Controller WiFi"																																																																		   
+        fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,000F", outClusters: "0003, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRZ16-01", deviceJoinName: "Spruce Controller"
+        fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,0009,000A,000F", outClusters: "0003, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRZ16-01", deviceJoinName: "Spruce Controller"
+		fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,0009,000A,000F", outClusters: "0003, 0006, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRWIFI16-01", deviceJoinName: "Spruce Controller WiFi"																																																																		   
 		
 	}
 
-	// simulator metadata
-	simulator {
-		// status messages
-		
-		// reply messages		
-	}
-    
-    preferences {
-        input description: 'If you have a rain sensor wired to the rain sensor input on the Spruce controller, turn it on here.', displayDuringSetup: true, type: 'paragraph', element: 'paragraph', title: 'Rain Sensor'
-        input 'RainEnable', 'bool', title: 'Rain Sensor Attached?', required: false, displayDuringSetup: true
-        input description: 'Enable your zones below, turning on Display zones will show each zone independently in the main screen.', displayDuringSetup: true, type: 'paragraph', element: 'paragraph', title: 'Enabled Zones'
-        //input name: 'zonedisplay', type: 'bool', title: 'Display zones independently', displayDuringSetup: true
-        input name: 'z1', type: 'bool', title: 'Enable Zone 1', displayDuringSetup: true
-        input name: 'z2', type: 'bool', title: 'Enable Zone 2', displayDuringSetup: true
-        input name: 'z3', type: 'bool', title: 'Enable Zone 3', displayDuringSetup: true
-        input name: 'z4', type: 'bool', title: 'Enable Zone 4', displayDuringSetup: true
-        input name: 'z5', type: 'bool', title: 'Enable Zone 5', displayDuringSetup: true
-        input name: 'z6', type: 'bool', title: 'Enable Zone 6', displayDuringSetup: true
-        input name: 'z7', type: 'bool', title: 'Enable Zone 7', displayDuringSetup: true
-        input name: 'z8', type: 'bool', title: 'Enable Zone 8', displayDuringSetup: true
-        input name: 'z9', type: 'bool', title: 'Enable Zone 9', displayDuringSetup: true
-        input name: 'z10', type: 'bool', title: 'Enable Zone 10', displayDuringSetup: true
-        input name: 'z11', type: 'bool', title: 'Enable Zone 11', displayDuringSetup: true
-        input name: 'z12', type: 'bool', title: 'Enable Zone 12', displayDuringSetup: true
-        input name: 'z13', type: 'bool', title: 'Enable Zone 13', displayDuringSetup: true
-        input name: 'z14', type: 'bool', title: 'Enable Zone 14', displayDuringSetup: true
-        input name: 'z15', type: 'bool', title: 'Enable Zone 15', displayDuringSetup: true
-        input name: 'z16', type: 'bool', title: 'Enable Zone 16', displayDuringSetup: true    
+	preferences {
+        input description: "If you have a rain sensor wired to the rain sensor input on the Spruce controller, turn it on here.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Rain Sensor"
+        input "RainEnable", "bool", title: "Rain Sensor Attached?", required: false, displayDuringSetup: true
+        input description: "Enable your zones below, turning on Display zones will show each zone independently in the main screen.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Enabled Zones"
+        //input name: "zonedisplay", type: "bool", title: "Display zones independently", displayDuringSetup: true
+        input name: "z1", type: "bool", title: "Enable Zone 1", displayDuringSetup: true
+        input name: "z2", type: "bool", title: "Enable Zone 2", displayDuringSetup: true
+        input name: "z3", type: "bool", title: "Enable Zone 3", displayDuringSetup: true
+        input name: "z4", type: "bool", title: "Enable Zone 4", displayDuringSetup: true
+        input name: "z5", type: "bool", title: "Enable Zone 5", displayDuringSetup: true
+        input name: "z6", type: "bool", title: "Enable Zone 6", displayDuringSetup: true
+        input name: "z7", type: "bool", title: "Enable Zone 7", displayDuringSetup: true
+        input name: "z8", type: "bool", title: "Enable Zone 8", displayDuringSetup: true
+        input name: "z9", type: "bool", title: "Enable Zone 9", displayDuringSetup: true
+        input name: "z10", type: "bool", title: "Enable Zone 10", displayDuringSetup: true
+        input name: "z11", type: "bool", title: "Enable Zone 11", displayDuringSetup: true
+        input name: "z12", type: "bool", title: "Enable Zone 12", displayDuringSetup: true
+        input name: "z13", type: "bool", title: "Enable Zone 13", displayDuringSetup: true
+        input name: "z14", type: "bool", title: "Enable Zone 14", displayDuringSetup: true
+        input name: "z15", type: "bool", title: "Enable Zone 15", displayDuringSetup: true
+        input name: "z16", type: "bool", title: "Enable Zone 16", displayDuringSetup: true 
     }
-
-	// UI tile definitions
-	tiles {
-    
-    	multiAttributeTile(name:"switchall", type:"generic", width:6, height:4) {        
-            tileAttribute('device.status', key: 'PRIMARY_CONTROL') {
-            attributeState 'schedule', label: 'Ready', icon: 'http://www.plaidsystems.com/smartthings/st_spruce_leaf_225_top.png'
-            attributeState 'finished', label: 'Finished', icon: 'st.Outdoor.outdoor5', backgroundColor: '#46c2e8'
-            attributeState 'raintoday', label: 'Rain Today', icon: 'http://www.plaidsystems.com/smartthings/st_rain.png', backgroundColor: '#d65fe3'
-            attributeState 'rainy', label: 'Rain', icon: 'http://www.plaidsystems.com/smartthings/st_rain.png', backgroundColor: '#d65fe3'
-            attributeState 'raintom', label: 'Rain Tomorrow', icon: 'http://www.plaidsystems.com/smartthings/st_rain.png', backgroundColor: '#d65fe3'
-            attributeState 'donewweek', label: 'Finished', icon: 'st.Outdoor.outdoor5', backgroundColor: '#00A0DC'
-            attributeState 'skipping', label: 'Skip', icon: 'st.Outdoor.outdoor20', backgroundColor: '#46c2e8'
-            attributeState 'moisture', label: 'Ready', icon: 'st.Weather.weather2', backgroundColor: '#46c2e8'
-            attributeState 'pause', label: 'PAUSE', icon: 'st.contact.contact.open', backgroundColor: '#e86d13'
-			attributeState 'delayed', label: 'Delayed', icon: 'st.contact.contact.open', backgroundColor: '#e86d13'
-            attributeState 'active', label: 'Active', icon: 'st.Outdoor.outdoor12', backgroundColor: '#3DC72E'
-            attributeState 'season', label: 'Adjust', icon: 'st.Outdoor.outdoor17', backgroundColor: '#ffb900'
-            attributeState 'disable', label: 'Off', icon: 'st.secondary.off', backgroundColor: '#cccccc'
-            attributeState 'warning', label: 'Warning', icon: 'http://www.plaidsystems.com/smartthings/st_spruce_leaf_225_top_yellow.png'
-            attributeState 'alarm', label: 'Alarm', icon: 'http://www.plaidsystems.com/smartthings/st_spruce_leaf_225_s_red.png', backgroundColor: '#e66565'
-            }
-            
-            tileAttribute("device.minutes", key: "VALUE_CONTROL") {
-                attributeState "VALUE_UP", action: "levelUp"
-                attributeState "VALUE_DOWN", action: "levelDown"
-            }
-            
-            tileAttribute("device.tileMessage", key: "SECONDARY_CONTROL") {
-                attributeState "tileMessage", label: '${currentValue}'     
-            }            
-            
+	tiles(scale: 2) {        
+		standardTile("switch", "device.switch", width: 2, height: 2) {		
+            state "off", label: "off", action: "on"
+            state "on", label: "on", action: "off"
         }
-        valueTile('minutes', 'device.minutes'){
-        	state 'minutes', label: '${currentValue} min'
-        }
-        valueTile('dummy', 'device.minutes'){
-        	state 'minutes', label: ''
-        }/*
-		standardTile('switch', 'device.switch', width:2, height:1) {
-            state 'off', label: 'Start', action: 'programOn', icon: 'st.Outdoor.outdoor12', backgroundColor: '#a9a9a9'
-            state 'programOn', label: 'Wait', action: 'programOff', icon: 'st.contact.contact.open', backgroundColor: '#f6e10e'
-            state 'programWait', label: 'Wait', action: 'programEnd', icon: 'st.contact.contact.open', backgroundColor: '#f6e10e'
-            state 'on', label: 'Running', action: 'programEnd', icon: 'st.Outdoor.outdoor12', backgroundColor: '#3DC72E'
+        standardTile("water", "device.water", width: 2, height: 2) {
+			state "dry", icon:"st.alarm.water.dry", backgroundColor:"#ffffff", action: "wet"
+			state "wet", icon:"st.alarm.water.wet", backgroundColor:"#00A0DC", action: "dry"
 		}
-        */
-        standardTile('program', 'program', width:1, height:1) {
-            state 'off', label: 'Start', action: 'programOn', icon: 'st.Outdoor.outdoor12', backgroundColor: '#a9a9a9'
-            state 'programOn', label: 'Wait', action: 'programOff', icon: 'st.contact.contact.open', backgroundColor: '#f6e10e'
-            state 'programWait', label: 'Wait', action: 'programOff', icon: 'st.contact.contact.open', backgroundColor: '#f6e10e'
-            state 'on', label: 'Running', action: 'programOff', icon: 'st.Outdoor.outdoor12', backgroundColor: '#3DC72E'
+        standardTile("wet", "device.water", inactiveLabel: false, decoration: "flat") {
+			state "default", label:'Wet', action:"wet", icon: "st.alarm.water.wet"
+		}         
+		standardTile("dry", "device.water", inactiveLabel: false, decoration: "flat") {
+			state "default", label:'Dry', action:"dry", icon: "st.alarm.water.dry"
 		}
-        valueTile('pause', 'pause', width:1, height:1) {            
-            state 'closed', label: '', icon: 'st.contact.contact.closed', decoration: 'flat'
-            state 'open', label: 'Pause', icon: 'st.contact.contact.open', decoration: 'flat'            
-		}
-        standardTile("rainsensor", "device.rainsensor", decoration: 'flat') {			
-			state "rainSensoroff", label: 'sensor', icon: 'http://www.plaidsystems.com/smartthings/st_drop_on.png'
-            state "rainSensoron", label: 'sensor', icon: 'http://www.plaidsystems.com/smartthings/st_drop_on_blue_small.png'
-            state "disable", label: 'sensor', icon: 'http://www.plaidsystems.com/smartthings/st_drop_slash.png'
-            state "enable", label: 'sensor', icon: 'http://www.plaidsystems.com/smartthings/st_drop_on.png'
-		}        
-      
-        standardTile('refresh', 'device.switch', inactiveLabel: false, decoration: 'flat') {
-			state 'default', action: 'refresh', icon:'st.secondary.refresh'
-		}
-        standardTile('configure', 'device.configure', inactiveLabel: false, decoration: 'flat') {
-			state 'configure', label:'', action:'configuration.configure', icon:'http://www.plaidsystems.com/smartthings/st_syncsettings.png'
-		}        
-		
-        main (['switchall'])        
-        details(['switchall','program','pause','minutes','rainsensor','refresh','configure'])		
-    }       
-}
-
-def installed(){
-	state.counter = state.counter ? state.counter + 1 : 1
-    
-    if (state.counter == 1) {
-    	//check every 48 hours - moved to configure
-    	//sendEvent(name: "checkInterval", value: 2 * 10 * 60 + 2 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-        
-        removeChildDevices()
-    	createChildDevices()
-    	response(refresh() + configure())
+        childDeviceTiles("switches")
+        main "switch"
+        details(["switch", "water"])
 	}
-    
 }
 
-def updated(){
+//----------------------zigbee parse-------------------------------//
+
+// Parse incoming device messages to generate events
+def parse(String description) {	
+	//log.debug "Parse description ${description}"
+    def result = null
+    def map = zigbee.parseDescriptionAsMap(description)
+    //log.debug map
+    
+    def endpoint = ( map.sourceEndpoint == null ? hextoint(map.endpoint) : hextoint(map.sourceEndpoint) )
+    def value = ( map.sourceEndpoint == null ? hextoint(map.value) : null )    
+    def command = (value != null ? commandType(endpoint, map.clusterInt) : null)
+    
+    if (command != null) log.debug "${command} endpoint ${endpoint} value ${value} cluster ${map.clusterInt}"
+    switch(command) {
+      case "alarm":
+        log.debug "alarm"
+        //result = createEvent(name: "switch", value: "off", descriptionText: "Alarm on zone ${endpoint - 1}", isStateChange: true, displayed: true)
+        break
+      case "program":
+      	log.debug "program"
+        def onoff = (value == 1 ? "on" : "off")        
+        result = createEvent(name: "switch", value: onoff)        
+        break
+      case "zone":      
+      	def onoff = (value == 1 ? "on" : "off")
+        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${endpoint}"}
+        if(child) child.sendEvent(name: "switch", value: onoff, isStateChange: true, displayed: true)//.parse(onoff)
+        break
+      case "rainSensor":
+      	def wetdry = (value == 1 ? "wet" : "dry")
+        if (!RainEnable) wetdry = "dry"
+        result = createEvent(name: "water", value: wetdry)
+        //def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.18"}       
+        //if(child) child.sendEvent(name: "water", value: wetdry, isStateChange: true, displayed: true)
+        break
+      case "refresh":
+        log.debug "refresh"
+        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}       
+        if(child) child.sendEvent(name: "switch", value: "off", isStateChange: true, displayed: true)
+        break
+      default:
+      	//log.debug "null"
+        break
+    }
+    
+	//log.debug "result: ${result}"
+	return result
+}
+
+
+//--------------------end zigbee parse-------------------------------//
+
+def installed() {	
+	if (!childDevices) {
+		createChildDevices()
+        response(refresh() + configure())
+	}
+}
+
+def updated() {
 	log.debug "updated"
-    // Device-Watch allows 2 check-in misses from device, checks every 2 hours
-    sendEvent(name: "checkInterval", value: 2* 60 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-	
+    removeChildDevices()
     createChildDevices()
     response(rain())
-    	
 }
 
-private void createChildDevices(){
-	//state.oldLabel = device.label   	
-    def isComp = false//true
-    //if (zonedisplay) isComp = false
+
+
+private void createChildDevices() {	
+    log.debug "create children"
+    /*
+    //RainSensor
+    def child = addChildDevice("Spruce Rain Sensor", "${device.deviceNetworkId}.18", device.hubId,
+				[completedSetup: true, label: "Rain Sensor",
+				 isComponent: true, componentName: "rainSensor", componentLabel: "Rain Sensor"])
+                 log.debug "${child}"
+    	child.sendEvent(name: "water", value: "dry", displayed: false)
+    */
+    //Refresh
+    def child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.19", device.hubId,
+				[completedSetup: true, label: "Refresh",
+				 isComponent: true, componentName: "Refresh", componentLabel: "Refresh"])
+                 log.debug "${child}"
+    	child.sendEvent(name: "switch", value: "off", displayed: false)
     
-    removeChildDevices()
-    //add children
+    //Schedule
+    /*
+    child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.1", device.hubId,
+				[completedSetup: true, label: "Schedule",
+				 isComponent: true, componentName: "Schedule", componentLabel: "Schedule"])
+                 log.debug "${child}"
+    	child.sendEvent(name: "switch", value: "off", displayed: false)
+    */
+    //zones
     for (i in 1..16){
-        if(settings."${"z${i}"}")addChildDevice("Spruce zone", "${device.deviceNetworkId}.${i}", null, [completedSetup: true, label: "${device.label} ${i}", isComponent: "${isComp}", componentName: "switch${i}", componentLabel: "${device.label} ${i}"])        
-        }    
+        if(settings."${"z${i}"}"){
+        	def dni = i + 1            
+            child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.${dni}", device.hubId,
+                    [completedSetup: true, label: "Spruce Zone${i}",
+                     isComponent: false, componentName: "Zone${i}", componentLabel: "${device.displayName} ${i}"])
+                     log.debug "${child}"
+            	child.sendEvent(name: "switch", value: "off", displayed: false)
+        }
+    }
 }
-
-
 
 private removeChildDevices() {
 	log.debug "remove children"
@@ -235,201 +221,91 @@ private removeChildDevices() {
     if(children != null){
         children.each{
             deleteChildDevice(it.deviceNetworkId)
-            }
         }
-       
+    }       
 }
 
 
-//set minutes
-def levelUp(){
-	def newvalue = 1
-    if (device.latestValue('minutes') != null) newvalue = device.latestValue('minutes').toInteger()+1
-    if (newvalue >= 60) newvalue = 60
-    def value = newvalue.toString()    
-    log.debug value
-	sendEvent(name: 'minutes', value: "${value}", descriptionText: "Manual Time set to ${value}", displayed: false)    
-}
-
-def levelDown(){
-	def newvalue = device.latestValue('minutes').toInteger()-1
-    if (newvalue <= 0) newvalue = 1
-    def value = newvalue.toString()    
-    log.debug value
-	sendEvent(name: 'minutes', value: "${value}", descriptionText: "Manual Time set to ${value}", displayed: false)
-}
-
-// Parse incoming device messages to generate events
-def parse(String description) {	
-	log.debug "Parse description ${description}"
-    def result = null
-    def map = [:]
-    if (description?.startsWith('catchall:')) {
-		def descMap = parseDescriptionAsMap(description)
-		//log.debug "Desc Map: $descMap"        
-		if (descMap.cluster == '0006' && descMap.attrId == '0006') {
-			log.debug 'Zone'
-            map = getZone(descMap)            
-		}
-        else if (descMap.cluster == '0009' && descMap.attrId == '0000') {
-			log.debug 'Alarm'
-            map = getAlarm(descMap)
-            }
-	}
-    else if (description?.startsWith('read attr -')) {
-		def descMap = parseDescriptionAsMap(description)
-		//log.debug "Desc Map: $descMap"
-        //using 000F cluster instead of 0006 (switch) because ST does not differentiate between EPs and processes all as switch
-		if (descMap.cluster == '000F' && descMap.attrId == '0055') {
-			log.debug 'Zone'
-            map = getZone(descMap)            
-		}
-        else if (descMap.cluster == '0009' && descMap.attrId == '0000') {
-			log.debug 'Alarm'
-            map = getAlarm(descMap)
-            }
-	}
-    else if (description?.startsWith('catchall: 0104 0006 01 01 0040 00 C7BB 00 00 0000 0B 01 0100')){    	
-		//log.debug 'switch on'
-        map.name = 'switch'
-        map.value = 'on'
-        map.descriptionText = "${device.displayName} turned sprinkler program on"
-    }
-    else if (description?.startsWith('catchall: 0104 0006 01 01 0040 00 C7BB 00 00 0000 0B 01 0000')){    	
-		//log.debug 'switch off'
-        map.name = 'switch'
-        map.value = 'off'
-        map.descriptionText = "${device.displayName} turned sprinkler program off"
-    }
-    else if (description?.startsWith('catchall: 0104 0009')){
-    	log.debug 'Sync settings to controller complete'
-        if (device.latestValue('status') != 'alarm'){
-        	def configEvt = createEvent(name: 'status', value: 'schedule', descriptionText: "Sync settings to controller complete")
-            def configMsg = createEvent(name: 'tileMessage', value: 'Sync settings to controller complete', descriptionText: "Sync settings to controller complete", displayed: false)
-        	result = [configEvt, configMsg]
-            }
-        return result
-    }
-  
-    if (map) {
-    	result = createEvent(map)
-    	//configure after reboot
-        if (map.value == 'warning' || map.value == 'alarm'){
-            def cmds = config()       
-            def alarmEvt = createEvent(name: 'tileMessage', value: map.descriptionText, descriptionText: "${map.descriptionText}", displayed: false)
-            result = cmds?.collect { new physicalgraph.device.HubAction(it) } + createEvent(map) + alarmEvt           
-			return result
-		}
-        else if (map.name == 'rainsensor'){
-        	def rainEvt = createEvent(name: 'tileMessage', value: map.descriptionText, descriptionText: "${map.descriptionText}", displayed: false)
-        	result = [createEvent(map), rainEvt]
-            return result
-        }
-        else if (map.name == 'switch'){
-        	def programEvt
-            if (map.value == 'on') programEvt = createEvent(name: 'program', value: 'on', descriptionText: 'Program turned on')
-            else if (map.value == 'off') programEvt = createEvent(name: 'program', value: 'off', descriptionText: 'Program turned off')
-            result = [createEvent(map), programEvt]
-            return result
-        }
-	}
-	if (map) log.debug "Parse returned ${map} ${result}"
-	return result
-}
-
-def parseDescriptionAsMap(description) {
-	(description - 'read attr - ').split(',').inject([:]) { map, param ->
-		def nameAndValue = param.split(':')
-		map += [(nameAndValue[0].trim()):nameAndValue[1].trim()]
-	}
-}
-
-def getZone(descMap){
-	def map = [:]
-    
-    def EP = Integer.parseInt(descMap.endpoint.trim(), 16)
-    
-    String onoff
-    if(descMap.value == '00'){
-    	onoff = 'off'
-    }    
-    else onoff = 'on'
-        
-    if (EP == 1){
-    	//map.name = 'program'
-        map.name = 'switch'
-        map.value = onoff
-        map.descriptionText = "${device.displayName} turned sprinkler program ${onoff}"        
-        }
-        
-    else if (EP == 18) {
-        map.name = 'rainsensor'
-    	log.debug "Rain enable: ${RainEnable}, sensor: ${onoff}"
-        map.value = 'rainSensor' + onoff
-        map.descriptionText = "${device.displayName} rain sensor is ${onoff}"        
-        }
-   	else {
-        EP -= 1
-       	map.name = 'switch' + EP
-    	map.value = 'zone' + onoff	//'z' + EP + onoff
-    	map.descriptionText = "${device.displayName} turned Zone $EP ${onoff}"
-        def childDevice = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${EP}"}        
-        def result = createEvent(name: 'switch', value: onoff, descriptionText: "${childDevice} is ${onoff}", isStateChange: true, displayed: true)        
-        if(childDevice) {
-        log.debug result
-        //return 
-        childDevice.sendEvent(result)
-        }
-    	}
-   	
-    map.isStateChange = true 
-    map.displayed = true
-    return map    
-}
-
-def getAlarm(descMap){
-	def map = [:]
-    map.name = 'status'
-    def alarmID = Integer.parseInt(descMap.value.trim(), 16)
-    log.debug "${alarmID}"
-    map.value = 'alarm'
-    map.displayed = true
-    map.isStateChange = true
-    if(alarmID <= 0){
-    	map.descriptionText = "${device.displayName} reboot, no other alarms"
-        map.value = 'warning'
-        //map.isStateChange = false
-        }
-    else map.descriptionText = "${device.displayName} reboot, reported zone ${alarmID - 1} error, please check zone is working correctly, press SYNC SETTINGS button to clear"
-       
-    return map        
-}
-
-//status notify and change status
+//----------------------------------commands--------------------------------------//
+//used for schedule
 def notify(String val, String txt){
-	sendEvent(name: 'status', value: val, descriptionText: txt, isStateChange: true, displayed: true)
+	log.debug "notify ${val} ${txt}"    
+}
+
+def programOn(){
+	log.debug "programOn"
+    //sendEvent(name: "switch", value: "programOn", descriptionText: "Program turned on")
+    //if (device.latestValue("pause") != "closed") endpause()
+    //sendEvent(name: "program", value: "programOn", descriptionText: "Program turned on", displayed: false) 
+}
+
+def programWait(){
+	log.debug "programWait"
+    //sendEvent(name: "program", value: "programWait", descriptionText: "Initializing Schedule")
+}
+
+def programEnd(){
+	log.debug "programEnd"
+	//sets switch to off and tells schedule switch is off/schedule complete with manaual
+    //sendEvent(name: "program", value: "off", descriptionText: "Program manually turned off")
+    //off() 
+}
     
-    //String txtShort = txt.take(100)
-    sendEvent(name: 'tileMessage', value: txt, descriptionText: "", isStateChange: true, displayed: false)
+def programOff(){
+	log.debug "programEnd"
+    //sendEvent(name: "program", value: "off", descriptionText: "Program turned off", displayed: false)
+    off()
 }
 
-//prefrences - rain sensor, manual time
-def rain() {
-    log.debug "Rain sensor: ${RainEnable}"
-    if (RainEnable) sendEvent(name: 'rainsensor', value: 'enable', descriptionText: "${device.displayName} rain sensor is enabled", isStateChange: true)
-    else sendEvent(name: 'rainsensor', value: 'disable', descriptionText: "${device.displayName} rain sensor is disabled", isStateChange: true)
-    
-    if (RainEnable) "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {01}"
-    else "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {00}"
+def start(){
+	log.debug "start"
+    if (device.latestValue("pause") != "closed") endpause()
+    on()
 }
 
-def manualTime(value){	
-	sendEvent(name: 'minutes', value: "${value}", descriptionText: "Manual Time set to ${value}", displayed: false)
+//new pause function
+def pause(){
+	log.debug "pause"
+    //sendEvent(name: "pause", value: "open", descriptionText: "Paused", displayed: true)
+	def pauseCmds = []
+    pauseCmds.push("st wattr 0x${device.deviceNetworkId} 1 6 0x4002 0x21 {0000}")
+    //send 0 time and off-> signal pause event
+	return pauseCmds + "st cmd 0x${device.deviceNetworkId} 1 6 0 {}"
 }
 
+def endpause(){	
+	log.debug "endpause"
+    sendEvent(name: "pause", value: "closed", descriptionText: "Pause end", displayed: true)	
+    //on()
+}
+
+
+//on & off redefined for Alexa to start manual schedule
+def on() {    
+    log.debug "Alexa on"    
+    //schedule subscribes to programOn
+    sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} on")
+    sendEvent(name: "switch", value: "programOn", descriptionText: "Schedule on")           
+}
+def off() {
+	log.debug "Alexa off"
+    sendEvent(name: "switch", value: "off", descriptionText: "Alexa turned program off")
+    zoff()        
+}
+
+// Commands to device
+//program on/off
+def zon() {
+	"st cmd 0x${device.deviceNetworkId} 1 6 1 {}"
+}
+def zoff() {
+	"st cmd 0x${device.deviceNetworkId} 1 6 0 {}" 
+}
+
+// Commands to children
 def manual(){    
     def newManaul = 10    
-    if (device.latestValue('minutes')) newManaul = device.latestValue('minutes').toInteger()    
+    //if (device.latestValue("minutes")) newManaul = device.latestValue("minutes").toInteger()    
     log.debug "Manual Zone runtime ${newManaul} mins"    
     def manualTime = hex(newManaul)  
     
@@ -437,6 +313,72 @@ def manual(){
     sendCmds.push("st wattr 0x${device.deviceNetworkId} 1 6 0x4002 0x21 {00${manualTime}}")
     return sendCmds
 }
+
+def childOn(dni) {	
+    def DNI = dni.replaceFirst("${device.deviceNetworkId}.","").toInteger()
+    log.debug "child ${DNI} on"
+    
+    def command = commandType(DNI, 6)
+    
+    switch(command) {
+      case "program":
+        zoneon(DNI)
+        break
+      case "zone":
+        zoneon(DNI)
+        break
+      case "rainSensor":
+        log.debug "rainSensor"
+        break
+      case "refresh":
+        refresh()
+        break
+    }
+    
+}
+
+def childOff(dni) {
+	def DNI = dni.replaceFirst("${device.deviceNetworkId}.","").toInteger()
+    log.debug "child ${DNI} off"
+    
+    def command = commandType(DNI, 6)
+    
+    switch(command) {
+      case "program":
+        zoneoff(DNI)
+        break
+      case "zone":
+        zoneoff(DNI)
+        break
+      case "rainSensor":
+        log.debug "rainSensor"
+        break
+      case "refresh":
+        log.debug "refresh"
+        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}       
+    	if(child) child.sendEvent(name: "switch", value: "off", isStateChange: true, displayed: true)
+        break
+    }
+}
+
+def commandType(DNI, cluster){
+	if (cluster == 9) return "alarm"
+    //else if (cluster == 15 && DNI == 18) return "refresh"
+	else if (DNI == 1) return "program"
+    else if (DNI in 2..17) return "zone"
+    else if (DNI == 18) return "rainSensor"
+    else if (DNI == 19) return "refresh"
+}
+
+def zoneon(DNI) {	
+    return manual() + zigbee.command(6, 1, "", [destEndpoint:DNI])    
+}
+
+def zoneoff(DNI) {    
+    return zigbee.command(6, 0, "", [destEndpoint:DNI])
+}
+
+//------------------end commands----------------------------------//
 
 //write switch time settings map
 def settingsMap(WriteTimes, attrType){
@@ -473,11 +415,10 @@ def writeTime(wEP, runTime){
 //set reporting and binding
 def configure() {
 	// Device-Watch allows 2 check-in misses from device, checks every 2 hours
-    sendEvent(name: "checkInterval", value: 2* 60 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
-	
-    sendEvent(name: 'status', value: 'schedule', descriptionText: "Syncing settings to controller")
-    sendEvent(name: 'minutes', value: "10", descriptionText: "Manual Time set to 10 mins", displayed: false)
-    sendEvent(name: 'tileMessage', value: 'Syncing settings to controller', descriptionText: 'Syncing settings to controller')
+    sendEvent(name: "DeviceWatch-DeviceStatus", value: "online")
+	sendEvent(name: "healthStatus", value: "online")
+	sendEvent(name: "DeviceWatch-Enroll", value: 2* 60 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	    
     config()    
 }
 
@@ -578,16 +519,30 @@ def config(){
 
 //PING is used by Device-Watch in attempt to reach the Device
 def ping() {
-	log.debug "device health ping"
-    //check main on/off
+	log.debug "device health ping"    
     return zigbee.onOffRefresh()
-    //refresh()
+}
+
+def rain() {
+    log.debug "Rain sensor: ${RainEnable}"
+    //if (RainEnable) sendEvent(name: "rainsensor", value: "enable", descriptionText: "${device.displayName} rain sensor is enabled", isStateChange: true)
+    //else sendEvent(name: "rainsensor", value: "disable", descriptionText: "${device.displayName} rain sensor is disabled", isStateChange: true)
+    
+    if (RainEnable) "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {01}"
+    else "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {00}"
+    /*
+    def childDevice = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.18"}        
+    if(childDevice) {
+        childDevice.sendEvent(name: "water", value: "dry", displayed: false)
+    }
+    */
 }
 
 def refresh() {
 
 	log.debug "refresh pressed"
-    //sendEvent(name: 'tileMessage', value: 'Refresh', descriptionText: 'Refresh')
+    def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}       
+    if(child) child.sendEvent(name: "switch", value: "on", isStateChange: true, displayed: true)
         
     def refreshCmds = [	    
         
@@ -618,6 +573,11 @@ def refresh() {
     return refreshCmds
 }
 
+//parse hex string and make integer
+private hextoint(String hex) {
+	Long.parseLong(hex, 16).toInteger()
+}
+
 private hex(value) {
 	new BigInteger(Math.round(value).toString()).toString(16)
 }
@@ -638,103 +598,4 @@ private byte[] reverseArray(byte[] array) {
         i++;
     }
     return array
-}
-
-//used for schedule 
-def programOn(){
-    //sendEvent(name: 'switch', value: 'programOn', descriptionText: 'Program turned on')
-    if (device.latestValue('pause') != 'closed') endpause()
-    sendEvent(name: 'program', value: 'programOn', descriptionText: 'Program turned on', displayed: false) 
-}
-
-def programWait(){    
-    sendEvent(name: 'program', value: 'programWait', descriptionText: "Initializing Schedule")
-}
-
-def programEnd(){
-	//sets switch to off and tells schedule switch is off/schedule complete with manaual
-    sendEvent(name: 'program', value: 'off', descriptionText: 'Program manually turned off')
-    //off() 
-}
-    
-def programOff(){    
-    sendEvent(name: 'program', value: 'off', descriptionText: 'Program turned off', displayed: false)
-    off()
-}
-
-def start(){
-	if (device.latestValue('pause') != 'closed') endpause()
-    on()
-}
-
-//new pause function
-def pause(){
-	log.debug "pause"
-    sendEvent(name: 'pause', value: 'open', descriptionText: "Paused", displayed: true)
-	def pauseCmds = []
-    pauseCmds.push("st wattr 0x${device.deviceNetworkId} 1 6 0x4002 0x21 {0000}")
-    //send 0 time and off-> signal pause event
-	return pauseCmds + "st cmd 0x${device.deviceNetworkId} 1 6 0 {}"
-}
-
-def endpause(){	
-	log.debug "endpause"
-    sendEvent(name: 'pause', value: 'closed', descriptionText: "Pause end", displayed: true)	
-    //on()
-}
-
-//on & off redefined for Alexa to start manual schedule
-def on() {    
-    log.debug 'Alexa on'
-    //schedule subscribes to programOn
-    sendEvent(name: 'switch', value: 'programOn', descriptionText: 'Alexa turned program on')           
-}
-def off() {
-	log.debug 'Alexa off'
-    sendEvent(name: 'switch', value: 'off', descriptionText: 'Alexa turned program off')
-    zoff()        
-}
-
-// Commands to device
-//program on/off
-def zon() {
-	"st cmd 0x${device.deviceNetworkId} 1 6 1 {}"
-}
-def zoff() {
-	"st cmd 0x${device.deviceNetworkId} 1 6 0 {}" 
-}
-
-/*
-def zon() {
-	log.debug 'zon'
-    on()
-}
-
-//on & off redefined for Alexa to start manual schedule
-def on() {
-	log.debug 'on'
-	"st cmd 0x${device.deviceNetworkId} 1 6 1 {}"
-}
-
-def off() {
-	log.debug 'off'
-	//sendEvent(name: 'program', value: 'off', descriptionText: 'Schedule off')
-	"st cmd 0x${device.deviceNetworkId} 1 6 0 {}" 
-}
-*/
-
-// Commands to children
-def zoneon(dni) {	
-    def DNI = dni.replaceFirst("${device.deviceNetworkId}.","")
-    log.debug DNI
-    DNI = DNI.toInteger() +1
-    log.debug DNI
-    return manual() + "st cmd 0x${device.deviceNetworkId} ${DNI} 6 1 {}"    
-}
-
-def zoneoff(dni) {	
-    def DNI = dni.replaceFirst("${device.deviceNetworkId}.","")
-    DNI = DNI.toInteger() +1
-    log.debug DNI
-    "st cmd 0x${device.deviceNetworkId} ${DNI} 6 0 {}"
 }

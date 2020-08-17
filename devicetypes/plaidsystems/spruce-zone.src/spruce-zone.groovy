@@ -20,34 +20,53 @@
  */
  
  metadata {
-	definition (name: 'Spruce zone', namespace: 'plaidsystems', author: 'Plaid Systems') {
-		capability 'Switch'
-        //capability 'Actuator'
-        //capability 'Valve'
+	definition (name: "Spruce zone", namespace: "plaidsystems", author: "Plaid Systems") {
+		capability "Actuator"
+        capability "Switch"        
+        capability "Health Check"
         
-        command 'on'
-        command 'off'
+        command "on"
+        command "off"        
 	}    
     tiles {
-        standardTile('switch', 'switch', inactiveLabel: false) {		
-            state 'off', label: 'off', action: 'on', icon: 'st.valves.water.closed', backgroundColor: '#ffffff'
-            state 'on', label: 'on', action: 'off', icon: 'st.valves.water.open', backgroundColor: '#00A0DC'
-        }
+        standardTile("switch", "device.switch", width: 2, height: 2) {		
+            state "off", label: "off", action: "on"
+            state "on", label: "on", action: "off"
+        }        
         main "switch"
-        details (["switch"])
     }
 }
 
-def installed(){
-	sendEvent(name: 'switch', value: "off", descriptionText: "initialize off", displayed: false)
+def installed() {
+	log.trace "Executing installed"
+	initialize()
 }
 
-void on(){
+def updated() {
+	log.trace "Executing updated"
+	initialize()
+}
+
+private initialize() {
+	log.trace "Executing initialize"
+    
+	sendEvent(name: "switch", value: "off", descriptionText: "initialize off", displayed: false)
+    sendEvent(name: "DeviceWatch-DeviceStatus", value: "online")
+	sendEvent(name: "healthStatus", value: "online")
+	sendEvent(name: "DeviceWatch-Enroll", value: [protocol: "cloud", scheme:"untracked"].encodeAsJson(), displayed: false)
+}
+
+def parse(String onoff) {
+	log.debug "Child Desc: ${onoff}"
+    sendEvent(name: "switch", value: onoff)    
+}
+
+def on(){
 	log.debug "${device.deviceNetworkId} on"
-    parent.zoneon(device.deviceNetworkId)    
+    parent.childOn(device.deviceNetworkId)
 }
 
-void off(){
+def off(){
 	log.debug "${device.deviceNetworkId} off"
-    parent.zoneoff(device.deviceNetworkId)    
+    parent.childOff(device.deviceNetworkId)
 }
