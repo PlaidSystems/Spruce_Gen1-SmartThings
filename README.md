@@ -1,4 +1,4 @@
-# Spruce_Gen1-Samsung_SmartThings
+# Spruce_Gen1-SmartThings
 Gen1 Devices and SmartApps for new Samsung SmartThings app
 
 # These Device Handlers and Schedule will work with the new Samsung SmartThings APP
