@@ -34,6 +34,7 @@
             state "on", label: "on", action: "off"
         }        
         main "switch"
+        details(["switch"])
     }
 }
 
