@@ -14,7 +14,8 @@ Importing this code into the SmartThings IDE will bring back functionality as li
 - Individual zones can be used in automations
 
 Known issues:
-- Toggling a zone on or off does not refresh correctly, and shows "spinning/thinking" icon, however the zone does activate and toggling into the zone tile or out fo the zone tile will "refresh" the state
+- Toggling a zone on or off does not refresh correctly, and shows "spinning/thinking" icon, however the zone does activate and toggling into the zone tile or out of the zone tile will "refresh" the state
+- Apple iOS zone tile does not show "on", however inside the zone device screen will show "on" and "off" correctly
 
 # Import the Device Handlers and SmartApp into your account
 
