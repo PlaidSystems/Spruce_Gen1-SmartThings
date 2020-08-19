@@ -1,4 +1,3 @@
-
 /**
  *  Copyright 2020 PlaidSystems
  *
@@ -12,6 +11,7 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  
+ Version v2.6
  Copy of SST except no "remote" type from Aeon
  Also added Water Sensor Capability
   
@@ -63,8 +63,11 @@ metadata {
 	}
 
 	preferences {
+        input description: "v2.6 8-2020", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Version"
         input description: "If you have a rain sensor wired to the rain sensor input on the Spruce controller, turn it on here.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Rain Sensor"
         input "RainEnable", "bool", title: "Rain Sensor Attached?", required: false, displayDuringSetup: true
+        input description: "Zones will turn off automatically after this time. This does not effect scheduled watering.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Manual Water Time"
+        input "ManualTime", "number", title: "Minutes", required: false, displayDuringSetup: true, defaultValue: 10
         input description: "Enable your zones below, turning on Display zones will show each zone independently in the main screen.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Enabled Zones"
         //input name: "zonedisplay", type: "bool", title: "Display zones independently", displayDuringSetup: true
         input name: "z1", type: "bool", title: "Enable Zone 1", displayDuringSetup: true
@@ -82,7 +85,7 @@ metadata {
         input name: "z13", type: "bool", title: "Enable Zone 13", displayDuringSetup: true
         input name: "z14", type: "bool", title: "Enable Zone 14", displayDuringSetup: true
         input name: "z15", type: "bool", title: "Enable Zone 15", displayDuringSetup: true
-        input name: "z16", type: "bool", title: "Enable Zone 16", displayDuringSetup: true 
+        input name: "z16", type: "bool", title: "Enable Zone 16", displayDuringSetup: true
     }
 	tiles(scale: 2) {        
 		standardTile("switch", "device.switch", width: 2, height: 2) {		
@@ -160,6 +163,7 @@ def parse(String description) {
 
 def installed() {	
 	if (!childDevices) {
+    	removeChildDevices()
 		createChildDevices()
         response(refresh() + configure())
 	}
@@ -167,7 +171,7 @@ def installed() {
 
 def updated() {
 	log.debug "updated"
-    removeChildDevices()
+    
     createChildDevices()
     response(rain())
 }
@@ -176,7 +180,15 @@ def updated() {
 
 private void createChildDevices() {	
     log.debug "create children"
-    /*
+    
+    /* Not Used   
+    //Schedule    
+    child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.1", device.hubId,
+				[completedSetup: true, label: "Schedule",
+				 isComponent: true, componentName: "Schedule", componentLabel: "Schedule"])
+                 log.debug "${child}"
+    	child.sendEvent(name: "switch", value: "off", displayed: false)
+    
     //RainSensor
     def child = addChildDevice("Spruce Rain Sensor", "${device.deviceNetworkId}.18", device.hubId,
 				[completedSetup: true, label: "Rain Sensor",
@@ -185,35 +197,45 @@ private void createChildDevices() {
     	child.sendEvent(name: "water", value: "dry", displayed: false)
     */
     //Refresh
-    def child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.19", device.hubId,
-				[completedSetup: true, label: "Refresh",
-				 isComponent: true, componentName: "Refresh", componentLabel: "Refresh"])
-                 log.debug "${child}"
-    	child.sendEvent(name: "switch", value: "off", displayed: false)
-    
-    //Schedule
-    /*
-    child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.1", device.hubId,
-				[completedSetup: true, label: "Schedule",
-				 isComponent: true, componentName: "Schedule", componentLabel: "Schedule"])
-                 log.debug "${child}"
-    	child.sendEvent(name: "switch", value: "off", displayed: false)
-    */
-    //zones
-    for (i in 1..16){
-        if(settings."${"z${i}"}"){
-        	def dni = i + 1            
-            child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.${dni}", device.hubId,
-                    [completedSetup: true, label: "Spruce Zone${i}",
-                     isComponent: false, componentName: "Zone${i}", componentLabel: "${device.displayName} ${i}"])
+    if (!childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}){
+    	log.debug "Add Refresh"
+        def child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.19", device.hubId,
+                    [completedSetup: true, label: "Refresh",
+                     isComponent: true, componentName: "Refresh", componentLabel: "Refresh"])
                      log.debug "${child}"
-            	child.sendEvent(name: "switch", value: "off", displayed: false)
-        }
+            child.sendEvent(name: "switch", value: "off", displayed: false)
     }
+    
+    //create, rename, or remove child
+    for (i in 1..16){
+    	def dni = i + 1
+        if(settings."${"z${i}"}"){
+        	def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${dni}"}
+            //create child
+            if (!child){                
+                child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.${dni}", device.hubId,
+                        [completedSetup: true, label: "${device.displayName} Zone${i}",
+                         isComponent: false, componentName: "Zone${i}", componentLabel: "${device.displayName} ${i}"])
+                         log.debug "${child}"
+                    child.sendEvent(name: "switch", value: "off", displayed: false)
+            }
+            //or rename child
+            else if (device.label != state.oldLabel){
+            	child.setLabel("${device.displayName} Zone${i}")
+            }
+        }
+        //remove child
+        else if (childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${dni}"}){
+        	deleteChildDevice("${device.deviceNetworkId}.${dni}")
+        }
+        
+    }
+    
+    state.oldLabel = device.label
 }
 
 private removeChildDevices() {
-	log.debug "remove children"
+	log.debug "remove all children"
 	
     //get and delete children avoids duplicate children
     def children = getChildDevices()    
@@ -280,7 +302,7 @@ def endpause(){
 
 
 //on & off redefined for Alexa to start manual schedule
-def on() {    
+def on() {
     log.debug "Alexa on"    
     //schedule subscribes to programOn
     sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} on")
@@ -303,7 +325,7 @@ def zoff() {
 
 // Commands to children
 def manual(){    
-    def newManaul = 10    
+    def newManaul = (settings.ManualTime ? settings.ManualTime : 10)
     //if (device.latestValue("minutes")) newManaul = device.latestValue("minutes").toInteger()    
     log.debug "Manual Zone runtime ${newManaul} mins"    
     def manualTime = hex(newManaul)  
