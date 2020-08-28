@@ -11,13 +11,15 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  
- Version v2.6
- Copy of SST except no "remote" type from Aeon
- Also added Water Sensor Capability
-  
+ Version v2.7
+ added Rain Sensor = Water Sensor Capability
+ added Pump/Master
+ add "Dimmer" to Spruce zone child for manual duration
  */
+private def getVersion() { return "v2.7 8-2020" } 
+ 
 metadata {
-	definition (name: "Spruce Controller SST", namespace: "plaidsystems", author: "plaidsystems") {
+	definition (name: "Spruce Controller SST", namespace: "plaidsystems", author: "plaidsystems", mnmn: "SmartThingsCommunity", vid: "1d153964-faa6-3523-abde-e092428a666d"){//vid: "1d153964-faa6-3523-abde-e092428a666d") {
 		capability "Switch"
         capability "Actuator"
         //capability "Switch Level"
@@ -31,8 +33,8 @@ metadata {
         
         command "on"
         command "off"        
-        command "childon"
-        command "childoff"
+        command "childOn"
+        command "childOff"
         
         command "wet"
         command "dry"
@@ -63,13 +65,17 @@ metadata {
 	}
 
 	preferences {
-        input description: "v2.6 8-2020", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Version"
-        input description: "If you have a rain sensor wired to the rain sensor input on the Spruce controller, turn it on here.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Rain Sensor"
-        input "RainEnable", "bool", title: "Rain Sensor Attached?", required: false, displayDuringSetup: true
-        input description: "Zones will turn off automatically after this time. This does not effect scheduled watering.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Manual Water Time"
-        input "ManualTime", "number", title: "Minutes", required: false, displayDuringSetup: true, defaultValue: 10
-        input description: "Enable your zones below, turning on Display zones will show each zone independently in the main screen.", displayDuringSetup: true, type: "paragraph", element: "paragraph", title: "Enabled Zones"
-        //input name: "zonedisplay", type: "bool", title: "Display zones independently", displayDuringSetup: true
+        input title: "Version", description: getVersion(), displayDuringSetup: true, type: "paragraph", element: "paragraph"
+        
+        input title: "Rain Sensor", description: "If you have a rain sensor wired to the rain sensor input on the Spruce controller, turn it on here.", displayDuringSetup: true, type: "paragraph", element: "paragraph"
+        input "RainEnable", "bool", title: "Rain Sensor Attached?", required: false, displayDuringSetup: true              
+                
+        input title: "Zone devices", displayDuringSetup: true, type: "paragraph", element: "paragraph",
+        	description: "Enable Zones for manual control and automations. Spruce Scheduler will work without zones or pump/master enabled here."
+        
+        input name: "pumpMasterZone", type: "enum", title: "Pump or Master zone", description: "Optional. Spruce Scheduler will also set this up.", required: false,
+        	options: ["Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5", "Zone 6", "Zone 7", "Zone 8", "Zone 9", "Zone 10", "Zone 11", "Zone 12", "Zone 13", "Zone 14", "Zone 15", "Zone 16"]
+            
         input name: "z1", type: "bool", title: "Enable Zone 1", displayDuringSetup: true
         input name: "z2", type: "bool", title: "Enable Zone 2", displayDuringSetup: true
         input name: "z3", type: "bool", title: "Enable Zone 3", displayDuringSetup: true
@@ -102,9 +108,13 @@ metadata {
 		standardTile("dry", "device.water", inactiveLabel: false, decoration: "flat") {
 			state "default", label:'Dry', action:"dry", icon: "st.alarm.water.dry"
 		}
-        childDeviceTiles("switches")
+        standardTile("Refresh", "device.switch", width: 2, height: 2) {		
+            state "off", label: "off", action: "on"
+            state "on", label: "on", action: "off"
+        }
+        childDeviceTiles("outlets")
         main "switch"
-        details(["switch", "water"])
+        details(["switch", "water","Refresh"])
 	}
 }
 
@@ -134,19 +144,19 @@ def parse(String description) {
         break
       case "zone":      
       	def onoff = (value == 1 ? "on" : "off")
-        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${endpoint}"}
-        if(child) child.sendEvent(name: "switch", value: onoff, isStateChange: true, displayed: true)//.parse(onoff)
+        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:${endpoint}"}
+        if(child) child.sendEvent(name: "switch", value: onoff)//, isStateChange: true, displayed: true) .parse(onoff) 
         break
       case "rainSensor":
       	def wetdry = (value == 1 ? "wet" : "dry")
         if (!RainEnable) wetdry = "dry"
         result = createEvent(name: "water", value: wetdry)
-        //def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.18"}       
+        //def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:18"}       
         //if(child) child.sendEvent(name: "water", value: wetdry, isStateChange: true, displayed: true)
         break
       case "refresh":
         log.debug "refresh"
-        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}       
+        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:19"}       
         if(child) child.sendEvent(name: "switch", value: "off", isStateChange: true, displayed: true)
         break
       default:
@@ -173,7 +183,8 @@ def updated() {
 	log.debug "updated"
     
     createChildDevices()
-    response(rain())
+    
+    response(pumpMaster() + rain())
 }
 
 
@@ -183,50 +194,54 @@ private void createChildDevices() {
     
     /* Not Used   
     //Schedule    
-    child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.1", device.hubId,
+    child = addChildDevice("Spruce zone", "${device.deviceNetworkId}:1", device.hubId,
 				[completedSetup: true, label: "Schedule",
 				 isComponent: true, componentName: "Schedule", componentLabel: "Schedule"])
                  log.debug "${child}"
     	child.sendEvent(name: "switch", value: "off", displayed: false)
     
     //RainSensor
-    def child = addChildDevice("Spruce Rain Sensor", "${device.deviceNetworkId}.18", device.hubId,
+    def child = addChildDevice("Spruce Rain Sensor", "${device.deviceNetworkId}:18", device.hubId,
 				[completedSetup: true, label: "Rain Sensor",
 				 isComponent: true, componentName: "rainSensor", componentLabel: "Rain Sensor"])
                  log.debug "${child}"
     	child.sendEvent(name: "water", value: "dry", displayed: false)
     */
     //Refresh
-    if (!childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}){
+    if (!childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:19"}){
     	log.debug "Add Refresh"
-        def child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.19", device.hubId,
+        def child = addChildDevice("Spruce zone", "${device.deviceNetworkId}:19", device.hubId,
                     [completedSetup: true, label: "Refresh",
                      isComponent: true, componentName: "Refresh", componentLabel: "Refresh"])
                      log.debug "${child}"
             child.sendEvent(name: "switch", value: "off", displayed: false)
     }
     
-    //create, rename, or remove child
+    //create, rename, or remove child    
     for (i in 1..16){
     	def dni = i + 1
         if(settings."${"z${i}"}"){
-        	def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${dni}"}
+        	def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:${dni}"}
             //create child
-            if (!child){                
-                child = addChildDevice("Spruce zone", "${device.deviceNetworkId}.${dni}", device.hubId,
-                        [completedSetup: true, label: "${device.displayName} Zone${i}",
-                         isComponent: false, componentName: "Zone${i}", componentLabel: "${device.displayName} ${i}"])
+            if (!child){
+            	def childLabel = (state.oldLabel != null ? "${state.oldLabel} Zone${i}" : "Spruce Zone${i}")
+                if (settings.pumpMasterZone == i) childLabel = "Spruce PM Zone${i}"
+                child = addChildDevice("Spruce zone", "${device.deviceNetworkId}:${dni}", device.hubId,
+                        [completedSetup: true, label: "${childLabel}",
+                         isComponent: false])//, componentName: "Zone${i}", componentLabel: "${device.displayName} ${i}"])
                          log.debug "${child}"
                     child.sendEvent(name: "switch", value: "off", displayed: false)
             }
             //or rename child
             else if (device.label != state.oldLabel){
-            	child.setLabel("${device.displayName} Zone${i}")
+            	def childLabel = (state.oldLabel != null ? "${state.oldLabel} Zone${i}" : "Spruce Zone${i}")
+                if (settings.pumpMasterZone == i) childLabel = "Spruce PM Zone${i}"
+            	child.setLabel("${childLabel}")
             }
         }
         //remove child
-        else if (childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.${dni}"}){
-        	deleteChildDevice("${device.deviceNetworkId}.${dni}")
+        else if (childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:${dni}"}){
+        	deleteChildDevice("${device.deviceNetworkId}:${dni}")
         }
         
     }
@@ -324,29 +339,20 @@ def zoff() {
 }
 
 // Commands to children
-def manual(){    
-    def newManaul = (settings.ManualTime ? settings.ManualTime : 10)
-    //if (device.latestValue("minutes")) newManaul = device.latestValue("minutes").toInteger()    
-    log.debug "Manual Zone runtime ${newManaul} mins"    
-    def manualTime = hex(newManaul)  
-    
-    def sendCmds = []
-    sendCmds.push("st wattr 0x${device.deviceNetworkId} 1 6 0x4002 0x21 {00${manualTime}}")
-    return sendCmds
-}
 
-def childOn(dni) {	
-    def DNI = dni.replaceFirst("${device.deviceNetworkId}.","").toInteger()
-    log.debug "child ${DNI} on"
+def childOn(valueMap) {
+	log.debug valueMap
+    def endpoint = valueMap.dni.replaceFirst("${device.deviceNetworkId}:","").toInteger()
+    def duration = (valueMap.duration != null ? valueMap.duration.toInteger() : 0)
     
-    def command = commandType(DNI, 6)
+    def command = commandType(endpoint, 6)
     
     switch(command) {
       case "program":
-        zoneon(DNI)
+        zoneOn(endpoint, 0)
         break
       case "zone":
-        zoneon(DNI)
+        zoneOn(endpoint, duration)
         break
       case "rainSensor":
         log.debug "rainSensor"
@@ -358,45 +364,52 @@ def childOn(dni) {
     
 }
 
-def childOff(dni) {
-	def DNI = dni.replaceFirst("${device.deviceNetworkId}.","").toInteger()
-    log.debug "child ${DNI} off"
+def childOff(valueMap) {
+	def endpoint = valueMap.dni.replaceFirst("${device.deviceNetworkId}:","").toInteger()    
     
-    def command = commandType(DNI, 6)
+    def command = commandType(endpoint, 6)
     
     switch(command) {
       case "program":
-        zoneoff(DNI)
+        zoneOff(endpoint)
         break
       case "zone":
-        zoneoff(DNI)
+        zoneOff(endpoint)
         break
       case "rainSensor":
         log.debug "rainSensor"
         break
       case "refresh":
         log.debug "refresh"
-        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}       
+        def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:19"}       
     	if(child) child.sendEvent(name: "switch", value: "off", isStateChange: true, displayed: true)
         break
     }
 }
 
-def commandType(DNI, cluster){
+def commandType(endpoint, cluster){
 	if (cluster == 9) return "alarm"
     //else if (cluster == 15 && DNI == 18) return "refresh"
-	else if (DNI == 1) return "program"
-    else if (DNI in 2..17) return "zone"
-    else if (DNI == 18) return "rainSensor"
-    else if (DNI == 19) return "refresh"
+	else if (endpoint == 1) return "program"
+    else if (endpoint in 2..17) return "zone"
+    else if (endpoint == 18) return "rainSensor"
+    else if (endpoint == 19) return "refresh"
 }
 
-def zoneon(DNI) {	
-    return manual() + zigbee.command(6, 1, "", [destEndpoint:DNI])    
+def zoneOn(endpoint, duration) {
+	return zoneDuration(duration) + zigbee.command(6, 1, "", [destEndpoint: endpoint])
 }
 
-def zoneoff(DNI) {    
-    return zigbee.command(6, 0, "", [destEndpoint:DNI])
+def zoneOff(endpoint) {    
+    zigbee.command(6, 0, "", [destEndpoint: endpoint])
+}
+
+def zoneDuration(int duration){
+    def hexDuration = hex(duration)  
+    
+    def sendCmds = []
+    sendCmds.push("st wattr 0x${device.deviceNetworkId} 1 6 0x4002 0x21 {00${hexDuration}}")
+    return sendCmds
 }
 
 //------------------end commands----------------------------------//
@@ -444,7 +457,8 @@ def configure() {
 }
 
 def config(){
-
+	configureHealthCheck()
+    
 	String zigbeeId = swapEndianHex(device.hub.zigbeeId)
 	log.debug "Configuring Reporting and Bindings ${device.deviceNetworkId} ${device.zigbeeId}"
     
@@ -546,23 +560,32 @@ def ping() {
 
 def rain() {
     log.debug "Rain sensor: ${RainEnable}"
-    //if (RainEnable) sendEvent(name: "rainsensor", value: "enable", descriptionText: "${device.displayName} rain sensor is enabled", isStateChange: true)
-    //else sendEvent(name: "rainsensor", value: "disable", descriptionText: "${device.displayName} rain sensor is disabled", isStateChange: true)
+        
+    if (RainEnable) return "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {01}"
+    else return "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {00}"  
+}
+
+def pumpMaster() {
+    def pumpMasterEndpoint = (settings.pumpMasterZone != null ? settings.pumpMasterZone.replaceFirst("Zone ","").toInteger() : null)
+    log.debug "Pump/Master zone: ${pumpMasterEndpoint}"
     
-    if (RainEnable) "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {01}"
-    else "st wattr 0x${device.deviceNetworkId} 18 0x0F 0x51 0x10 {00}"
-    /*
-    def childDevice = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.18"}        
-    if(childDevice) {
-        childDevice.sendEvent(name: "water", value: "dry", displayed: false)
+    def endpointMap = [:]    
+    int zone = 1
+    while(zone <= 17)
+    {
+        def zoneCycle = (zone == pumpMasterEndpoint ? 4 : 2)
+        //endpoint = zone + 1
+        endpointMap."${zone+1}" = "${zoneCycle}"
+        zone++
     }
-    */
+    
+    return settingsMap(endpointMap, 4001)
 }
 
 def refresh() {
 
 	log.debug "refresh pressed"
-    def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}.19"}       
+    def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:19"}       
     if(child) child.sendEvent(name: "switch", value: "on", isStateChange: true, displayed: true)
         
     def refreshCmds = [	    
@@ -592,6 +615,28 @@ def refresh() {
     ]
     
     return refreshCmds
+}
+
+def healthPoll() {
+	log.debug "healthPoll()"
+	def cmds = refresh()
+	cmds.each { sendHubCommand(new physicalgraph.device.HubAction(it)) }
+}
+
+def configureHealthCheck() {
+	Integer hcIntervalMinutes = 12
+	if (!state.hasConfiguredHealthCheck) {
+		log.debug "Configuring Health Check, Reporting"
+		unschedule("healthPoll")
+		runEvery5Minutes("healthPoll")
+		def healthEvent = [name: "checkInterval", value: hcIntervalMinutes * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID]]
+		// Device-Watch allows 2 check-in misses from device
+		sendEvent(healthEvent)
+		childDevices.each {
+			it.sendEvent(healthEvent)
+		}
+		state.hasConfiguredHealthCheck = true
+	}
 }
 
 //parse hex string and make integer
