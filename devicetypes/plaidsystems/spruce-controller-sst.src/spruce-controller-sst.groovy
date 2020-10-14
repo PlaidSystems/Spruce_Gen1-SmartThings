@@ -11,8 +11,9 @@
  *  for the specific language governing permissions and limitations under the License.
  *
  Version v3.0
- * update vid with status
- 
+ * update vid with status, message, rainsensor
+ * maintain compatibility with Spruce Scheduler
+ * Requires Spruce Valve as child device 
  
  Version v2.7
  * added Rain Sensor = Water Sensor Capability
@@ -21,33 +22,38 @@
  
 **/
  
-private def getVersion() { return "v3.0 10-2020" } 
+private def getVersion() { return "v3.0 10-2020" }
  
 metadata {
-	definition (name: "Spruce Controller SST", namespace: "plaidsystems", author: "plaidsystems", mnmn: "SmartThingsCommunity", vid: "ca4d872b-f489-322c-b99f-ade56864b5da"){//vid: "1d153964-faa6-3523-abde-e092428a666d"){//vid: "1d153964-faa6-3523-abde-e092428a666d") {
+	definition (name: "Spruce Controller SST", namespace: "plaidsystems", author: "plaidsystems", mnmn: "SmartThingsCommunity", vid: "412ceebe-09e5-3b06-8ed6-ab12ec248cc7"){
 		capability "Actuator"
         capability "Switch"        
         capability "Water Sensor"
         capability "Sensor"
         capability "Health Check"
-        capability "heartreturn55003.controllerStatus"
+        capability "heartreturn55003.status"
+        capability "heartreturn55003.controllerMessage"
+        capability "heartreturn55003.rainSensor"
         
         capability "Configuration"
-        capability "Refresh"
-		
-        attribute "controllerStatus", "string"
-        attribute "rainsensor", "string"
+        capability "Refresh"        
+        
         attribute "status", "string"
+        attribute "controllerMessage", "string"
+        attribute "rainsensor", "string"
         
         command "on"
         command "off"        
         command "valveOn"
         command "valveOff"
+        command "zoneDuration"
         
         command "wet"
         command "dry"
         
-        command "setControllerStatus"
+        command "setStatus"
+        command "setRainsensor"
+        command "setControllerMessage"
         
         command "zon"
         command "zoff"
@@ -59,8 +65,6 @@ metadata {
         command "config"
         command "refresh"        
         command "rain"
-        command "manual"
-        command "manualTime"
         command "settingsMap"
         command "writeTime"
         command "writeType"        
@@ -70,7 +74,6 @@ metadata {
 		//new release
         fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,000F", outClusters: "0003, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRZ16-01", deviceJoinName: "Spruce Controller"
         fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,0009,000A,000F", outClusters: "0003, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRZ16-01", deviceJoinName: "Spruce Controller"
-		fingerprint endpointId: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18", profileId: "0104", deviceId: "0002", deviceVersion: "00", inClusters: "0000,0003,0004,0005,0006,0009,000A,000F", outClusters: "0003, 0006, 0019", manufacturer: "PLAID SYSTEMS", model: "PS-SPRWIFI16-01", deviceJoinName: "Spruce Controller WiFi"																																																																		   
 		
 	}
 
@@ -117,11 +120,7 @@ metadata {
 		}         
 		standardTile("dry", "device.water", inactiveLabel: false, decoration: "flat") {
 			state "default", label:'Dry', action:"dry", icon: "st.alarm.water.dry"
-		}
-        standardTile("rainsensor", "device.switch", width: 2, height: 2) {		
-            state "rainsensoroff", label: "rainsensoroff", action: "rainsensoron"
-            state "rainsensoron", label: "rainsensoron", action: "rainsensoroff"
-        }
+		}        
         standardTile("refresh", "device.switch", width: 2, height: 2) {		
             state "off", label: "off", action: "on"
             state "on", label: "on", action: "off"
@@ -136,25 +135,33 @@ metadata {
 
 // Parse incoming device messages to generate events
 def parse(String description) {	
-	log.debug "Parse description ${description}"
+	//log.debug "Parse description ${description}"
     def result = []
+    def endpoint, value, command
     def map = zigbee.parseDescriptionAsMap(description)
-    //log.debug "map ${map}"
-    //log.debug map.sourceEndpoint
-    def endpoint = ( map.sourceEndpoint == null ? hextoint(map.endpoint) : hextoint(map.sourceEndpoint) )
-    def value = ( map.sourceEndpoint == null ? hextoint(map.value) : null )    
-    def command = (value != null ? commandType(endpoint, map.clusterInt) : null)
+    log.debug "map ${map}"
     
-    if (command != null) log.debug "${command} endpoint ${endpoint} value ${value} cluster ${map.clusterInt}"
+    if (description.contains("on/off")){    	
+        command = 1
+        value = description[-1]
+    }
+    else {
+    	endpoint = ( map.sourceEndpoint == null ? hextoint(map.endpoint) : hextoint(map.sourceEndpoint) )
+    	value = ( map.sourceEndpoint == null ? hextoint(map.value) : null )    
+    	command = (value != null ? commandType(endpoint, map.clusterInt) : null)
+    }
+    
+    if (command != null) log.debug "command ${command} endpoint ${endpoint} value ${value} cluster ${map.clusterInt}"
     switch(command) {
       case "alarm":
         log.debug "alarm"
-        result.push(createEvent(name: "controllerStatus", value: "System reset.  Possible issue with valve or wiring.", descriptionText: "Initialized"))
+        result.push(createEvent(name: "status", value: "alarm"))
+        result.push(createEvent(name: "controllerMessage", value: "System reboot.  Possible issue with valve or wiring."))
         break
       case "program":
-      	log.debug "program"
-        //def onoff = (value == 1 ? "on" : "off")        
-        //result = createEvent(name: "switch", value: onoff)
+      	log.debug "program"        
+        if (value == 1) result.push(createEvent(name: "switch", value: "on"))
+        else if (value == 0) result.push(createEvent(name: "switch", value: "off"))
         break
       case "zone":      
       	def onoff = (value == 1 ? "open" : "closed")
@@ -162,18 +169,14 @@ def parse(String description) {
         if(child) child.sendEvent(name: "valve", value: onoff)
         break
       case "rainSensor":
-      	def wetdry = (value == 1 ? "wet" : "dry")
-        if (!RainEnable) wetdry = "dry"
-        result = createEvent(name: "water", value: wetdry)        
-        //legacy sensor
+      	log.debug "rainSensor"
         def rainsensor = (value == 1 ? "rainsensoron" : "rainsensoroff")
-        if (!RainEnable) rainsensor = "rainsensoroff"
-        result = createEvent(name: "rainsensor", value: rainsensor)        
+        if (!RainEnable) rainsensor = "disabled"
+        result.push(createEvent(name: "rainsensor", value: rainsensor))
         break
       case "refresh":
-        log.debug "refresh"        
-        //def child = childDevices.find{it.deviceNetworkId == "${device.deviceNetworkId}:19"}       
-        //if(child) child.sendEvent(name: "switch", value: "off", isStateChange: true, displayed: true)
+        log.debug "refresh"
+        
         break
       default:
       	//log.debug "null"
@@ -201,16 +204,22 @@ def installed() {
 		createChildDevices()
         response(refresh() + configure())
 	}
+    initialize()
 }
 
 def updated() {
 	log.debug "updated"
     
     createChildDevices()
-    sendEvent(name: "controllerStatus", value: "idle", descriptionText: "Initialized")
-    response(pumpMaster() + rain())
+    initialize()
 }
 
+def initialize(){
+    sendEvent(name: "switch", value: "off")
+    sendEvent(name: "status", value: "Idle")
+    sendEvent(name: "controllerMessage", value: "INITIAL SETUP: Enable zones in settings")
+    response(pumpMaster() + rain())
+}
 
 
 private void createChildDevices() {	
@@ -263,46 +272,52 @@ private removeChildDevices() {
 
 //----------------------------------commands--------------------------------------//
 //used for schedule
-def notify(String val, String txt){
-	log.debug "notify ${val} ${txt}"
-    sendEvent(name: "status", value: "${val}", descriptionText: "${txt}")
-    sendEvent(name: "controllerStatus", value: "${val} ${txt}", descriptionText: "${val} ${txt}")
+def notify(String val, String txt){	
+    sendEvent(name: "status", value: "${val}", descriptionText: "${val}")
+    sendEvent(name: "controllerMessage", value: "${txt}", descriptionText: "${txt}")
+}
+
+def setStatus(status){
+	log.debug "status ${status}"
+    sendEvent(name: "status", value: status, descriptionText: "Initialized")
+}
+
+def setRainsensor(rainsensor){
+	log.debug "status ${rainsensor}"
+    sendEvent(name: "rainsensor", value: "${rainsensor}", descriptionText: "Initialized")
+}
+
+def setControllerMessage(controllerMessage){
+	log.debug "status ${controllerMessage}"
+    sendEvent(name: "controllerMessage", value: controllerMessage, descriptionText: "Initialized")
 }
 
 def programOn(){
 	log.debug "programOn"
-    sendEvent(name: "switch", value: "programOn", descriptionText: "Program turned on")
-    //if (device.latestValue("pause") != "closed") endpause()
-    //sendEvent(name: "program", value: "programOn", descriptionText: "Program turned on", displayed: false)
-    sendEvent(name: "controllerStatus", value: "Schedule Start", descriptionText: "Initializing Start")
+    sendEvent(name: "switch", value: "programOn", descriptionText: "Program turned on")    
 }
 
 def programWait(){
 	log.debug "programWait"
-    sendEvent(name: 'switch', value: 'programWait', descriptionText: "Initializing Schedule")
-    sendEvent(name: "controllerStatus", value: "Initializing Schedule", descriptionText: "Initializing Schedule")
+    sendEvent(name: 'switch', value: 'programWait', descriptionText: "Initializing Schedule")    
 }
 
 def programEnd(){
-	log.debug "programEnd"	
-    sendEvent(name: "controllerStatus", value: "Schedule Complete", descriptionText: "Schedule turned off")
-    sendEvent(name: 'switch', value: 'off', descriptionText: 'Program manually turned off')
+	log.debug "programEnd"    
     zoff()
 }
     
 def programOff(){
-	log.debug "programEnd"
-    sendEvent(name: "controllerStatus", value: "Idle")
-    sendEvent(name: 'switch', value: 'off', descriptionText: 'Program turned off')    
+	log.debug "programEnd"    
     off()
 }
 
 //on & off redefined for Alexa to start manual schedule
 def on() {
-    log.debug "on"    
-    //schedule subscribes to programOn    
-    sendEvent(name: "switch", value: "programOn", descriptionText: "Schedule on")
-    //sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} on")
+    log.debug "on"
+    //Spruce Scheduler subscribes to programOn    
+    //sendEvent(name: "switch", value: "programOn", descriptionText: "Schedule on")
+    refresh()
 }
 
 def off() {
@@ -320,37 +335,13 @@ def zoff() {
 	"st cmd 0x${device.deviceNetworkId} 1 6 0 {}" 
 }
 
-/*
-def start(){
-	log.debug "start"
-    if (device.latestValue("pause") != "closed") endpause()
-    on()
-}
-
-//new pause function
-def pause(){
-	log.debug "pause"
-    //sendEvent(name: "pause", value: "open", descriptionText: "Paused", displayed: true)
-	def pauseCmds = []
-    pauseCmds.push("st wattr 0x${device.deviceNetworkId} 1 6 0x4002 0x21 {0000}")
-    //send 0 time and off-> signal pause event
-	return pauseCmds + "st cmd 0x${device.deviceNetworkId} 1 6 0 {}"
-}
-
-def endpause(){	
-	log.debug "endpause"
-    sendEvent(name: "pause", value: "closed", descriptionText: "Pause end", displayed: true)	
-    //on()
-}
-*/
-
 // Commands to zones/valves
 def valveOn(valueMap) {
 	log.debug valueMap
     def endpoint = valueMap.dni.replaceFirst("${device.deviceNetworkId}:","").toInteger()
     def duration = (valueMap.duration != null ? valueMap.duration.toInteger() : 0)
     
-    sendEvent(name: "controllerStatus", value: "Zone ${endpoint} on for ${duration}min(s)", descriptionText: "Zone ${endpoint} on for ${duration}min(s)")
+    sendEvent(name: "status", value: "Zone ${endpoint} on for ${duration}min(s)", descriptionText: "Zone ${endpoint} on for ${duration}min(s)")
     
     zoneOn(endpoint, duration)
 }
@@ -358,7 +349,7 @@ def valveOn(valueMap) {
 def valveOff(valueMap) {
 	def endpoint = valueMap.dni.replaceFirst("${device.deviceNetworkId}:","").toInteger()    
         
-    sendEvent(name: "controllerStatus", value: "Zone ${endpoint} turned off", descriptionText: "Zone ${endpoint} turned off")
+    sendEvent(name: "status", value: "Zone ${endpoint} turned off", descriptionText: "Zone ${endpoint} turned off")
 
 	zoneOff(endpoint)    
 }
@@ -391,7 +382,7 @@ def settingsMap(WriteTimes, attrType){
     	  
     	if (WriteTimes."${i}"){        	
         	runTime = hex(Integer.parseInt(WriteTimes."${i}"))
-        	log.debug "${i} : $runTime"
+        	//log.debug "${i} : $runTime"
 		
         	if (attrType == 4001) sendCmds.push("st wattr 0x${device.deviceNetworkId} ${i} 0x06 0x4001 0x21 {00${runTime}}")
         	else sendCmds.push("st wattr 0x${device.deviceNetworkId} ${i} 0x06 0x4002 0x21 {00${runTime}}")
@@ -404,7 +395,7 @@ def settingsMap(WriteTimes, attrType){
 
 //send switch time
 def writeType(wEP, cycle){
-	log.debug "wt ${wEP} ${cycle}"
+	//log.debug "wt ${wEP} ${cycle}"
     "st wattr 0x${device.deviceNetworkId} ${wEP} 0x06 0x4001 0x21 {00" + hex(cycle) + "}"
 }
 
@@ -551,10 +542,8 @@ def pumpMaster() {
 
 def refresh() {
 	log.debug "refresh pressed"
-        
-    def refreshCmds = [	    
-        
-        "st rattr 0x${device.deviceNetworkId} 1 0x0F 0x55", "delay 500",
+    
+    def refreshCmds = [
         
         "st rattr 0x${device.deviceNetworkId} 2 0x0F 0x55", "delay 500",
         "st rattr 0x${device.deviceNetworkId} 3 0x0F 0x55", "delay 500",
@@ -577,6 +566,9 @@ def refresh() {
         "st rattr 0x${device.deviceNetworkId} 18 0x0F 0x51","delay 500",
  	
     ]
+    
+    //will trigger off command if checked during schedule initialization
+    if (device.latestValue("switch") != "programWait") refreshCmds + ["st rattr 0x${device.deviceNetworkId} 1 0x0F 0x55", "delay 500"]
     
     return refreshCmds
 }
