@@ -1,8 +1,8 @@
 # Spruce_Gen1-Samsung_SmartThings
 Devices and SmartApps for new Samsung SmartThings app
 
+# The device handler updates have been submitted to SmartThings for release.
 # These Device Handlers and Schedule will work with the new Samsung SmartThings APP
-# This is a preliminary release!!
 
 The migration to the newest Samsing app has caused the Gen1 Spruce Controller device tile to break.
 The Spruce Scheduler is also no longer visible for new installs in the app.
