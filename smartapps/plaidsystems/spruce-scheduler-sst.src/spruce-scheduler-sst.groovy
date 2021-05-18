@@ -1,5 +1,5 @@
 /**
- *  Spruce Scheduler Pre-release V2.6 - Updated 8/2020
+ *  Spruce Scheduler Pre-release V3 - Updated 5/2021
  *
  *
  *  Copyright 2015 Plaid Systems
@@ -14,6 +14,8 @@
  *  for the specific language governing permissions and limitations under the License.
  *
 
+-------v3-------------------
+-Update to work with new controller type
 
 -------v2.6-------------------
 -Duplicate published v2.55
@@ -45,7 +47,7 @@ definition(
     name: "Spruce Scheduler SST",
     namespace: "plaidsystems",
     author: "Plaid Systems",
-    description: "Schedule for Spruce irrigation controller\nSamsung SmartThings App\nV2.6 2020",
+    description: "Schedule for Spruce irrigation controller\nSamsung SmartThings App\nV3 2021",
     category: "Green Living",
     iconUrl: "http://www.plaidsystems.com/smartthings/st_spruce_leaf_250f.png",
     iconX2Url: "http://www.plaidsystems.com/smartthings/st_spruce_leaf_250f.png",
@@ -866,8 +868,8 @@ private boolean attemptRecovery() {
         return false                                        // only clean up if we think we are still running
     }
     else {                                                    // Hmmm...seems we were running before...
-        def csw = settings.switches.currentSwitch
-        def cst = settings.switches.currentStatus
+        def csw = settings.switches.latestValue('controllerState')
+        def cst = settings.switches.latestValue('status')
         switch (csw) {
             case 'on':                                        // looks like this schedule is running the controller at the moment
                 if (!atomicState.startTime) {                 // cycleLoop cleared the startTime, but cycleOn() didn't set it
@@ -893,7 +895,7 @@ private boolean attemptRecovery() {
                     return false
                 }
 
-                if (switches.currentStatus != 'pause') {     // off and not paused - probably another schedule, let's clean up
+                if (cst != 'pause') {     // off and not paused - probably another schedule, let's clean up
                     resetEverything()
                     return false
                 }
@@ -903,12 +905,12 @@ private boolean attemptRecovery() {
                 return true
                 break
 
-            case 'programOn':                    // died while manual program running?
-            case 'programWait':                    // looks like died previously before we got started, let's try to clean things up
+            case 'resume':                    // died while manual program running?
+            case 'pause':                    // looks like died previously before we got started, let's try to clean things up
                 resetEverything()
                 if (atomicState.finishTime) atomicState.finishTime = null
                 if ((cst == 'active') || atomicState.startTime) {    // if we announced we were in preCheck, or made it all the way to cycleOn before it crashed
-                    settings.switches.programOff()                    // only if we think we actually started (cycleOn() started)
+                    settings.switches.off()                    // only if we think we actually started (cycleOn() started)
                     // probably kills manual cycles too, but we'll let that go for now
                 }
                 if (atomicState.startTime) atomicState.startTime = null
@@ -1060,7 +1062,7 @@ private String getRunDays(day1,day2,day3,day4,day5,day6,day7)
 def manualStart(evt){
     boolean running = attemptRecovery()        // clean up if prior run crashed
 	//isWeather()//use for testing
-    if (settings.enableManual && !running && (settings.switches.currentStatus != 'pause')){
+    if (settings.enableManual && !running && (settings.switches.controllerState != 'pause')){
         if (settings.sync && ( (settings.sync.currentSwitch != 'off') || settings.sync.currentStatus == 'pause') ) {
             note('skipping', "${app.label}: Manual run aborted, ${settings.sync.displayName} appears to be busy", 'a')
             }
@@ -1070,7 +1072,7 @@ def manualStart(evt){
 
             if (runNowMap) {
                 atomicState.run = true
-                settings.switches.programWait()
+                settings.switches.setControllerState('pause')
                 subscribe(settings.switches, 'switch.off', cycleOff)
 
                 runIn(60, cycleOn)               // start water program
@@ -1079,7 +1081,7 @@ def manualStart(evt){
                 String newString = ''
                 int tt = state.totalTime
                 if (tt) {
-                    int hours = tt / 60            // DON'T Math.round this one
+                    int hours = tt / 60            // DO NOT Math.round this one
                     int mins = tt - (hours * 60)
                     String hourString = ''
                     String s = ''
@@ -1107,7 +1109,7 @@ boolean busy(){
         }
         else {
             // don't change the current status, in case the currently running schedule is in off/paused mode
-            note(settings.switches.currentStatus, "${app.label}: Already running, skipping additional start", 'i')
+            note(settings.switches.latestValue('status'), "${app.label}: Already running, skipping additional start", 'i')
             return true
         }
     }
@@ -1115,7 +1117,7 @@ boolean busy(){
 
     // Moved from cycleOn() - don't even start pre-check until the other controller completes its cycle
     if (settings.sync) {
-        if ((settings.sync.currentSwitch != 'off') || settings.sync.currentStatus == 'pause') {
+        if ((settings.sync.controllerState != 'off') || settings.sync.controllerState == 'pause') {
             subscribe(settings.sync, 'switch.off', syncOn)
 
             note('delayed', "${app.label}: Waiting for ${settings.sync.displayName} to complete before starting", 'c')
@@ -1124,8 +1126,8 @@ boolean busy(){
     }
 
     // Check that the controller isn't paused while running some other schedule
-    def csw = settings.switches.currentSwitch
-    def cst = settings.switches.currentStatus
+    def csw = settings.switches.latestValue('controllerState')
+    def cst = settings.switches.latestValue('status')
 
     if ((csw == 'off') && (cst != 'pause')) {                // off && !paused: controller is NOT in use
         log.debug "switches ${csw}, status ${cst} (1st)"
@@ -1148,8 +1150,8 @@ boolean busy(){
 }
 
 def busyOff(evt){
-    def cst = settings.switches.currentStatus
-    if ((settings.switches.currentSwitch == 'off') && (cst != 'pause')) { // double check that prior schedule is done
+    def cst = settings.switches.latestValue('status')
+    if ((settings.switches.latestValue('controllerState') == 'off') && (cst != 'pause')) { // double check that prior schedule is done
         unsubscribe(switches)                            // we don't want any more button pushes until preCheck runs
         Random rand = new Random()                         // just in case there are multiple schedules waiting on the same controller
         int randomSeconds = rand.nextInt(120) + 15
@@ -1169,7 +1171,7 @@ def preCheck() {
 
     if (!busy()) {
         atomicState.run = true                         // set true before doing anything, atomic in case we crash (busy() set it false if !busy)
-        settings.switches.programWait()                // take over the controller so other schedules don't mess with us
+        settings.switches.setControllerState('pause')	// take over the controller so other schedules don't mess with us
         runIn(45, checkRunMap)                        // schedule checkRunMap() before doing weather check, gives isWeather 45s to complete
                                                     // because that seems to be a little more than the max that the ST platform allows
         unsubAllBut()                                // unsubscribe to everything except appTouch()
@@ -1181,7 +1183,7 @@ def preCheck() {
 
            if (isWeather()) {                            // set adjustments and check if we shold skip because of rain
                resetEverything()                        // if so, clean up our subscriptions
-               switches.programOff()                    // and release the controller
+               switches.off()                    // and release the controller
         }
         else {
             log.debug 'preCheck(): running checkRunMap in 2 seconds'    //COOL! We finished before timing out, and we're supposed to water today
@@ -1265,7 +1267,7 @@ def checkRunMap(){
             String newString = ''
             int tt = state.totalTime
             if (tt) {
-                int hours = tt / 60            // DON'T Math.round this one
+                int hours = tt / 60            // DO NOT Math.round this one
                 int mins = tt - (hours * 60)
                 String hourString = ''
                 String s = ''
@@ -1280,7 +1282,7 @@ def checkRunMap(){
         else {
             unsubscribe(settings.switches)
             unsubWaterStoppers()
-            switches.programOff()
+            switches.off()
             if (enableManual) subscribe(settings.switches, 'switch.programOn', manualStart)
             note('skipping', "${app.label}: No watering today", 'd')
             if (atomicState.run) atomicState.run = false         // do this last, so that the above note gets sent to the controller
@@ -1397,7 +1399,7 @@ def cycleLoop(int i)
     }
 
     //send settings to Spruce Controller
-    switches.settingsMap(timeMap,4002)
+    switches.settingsMap(timeMap, 0x4002)
     runIn(30, writeCycles)
 
     // meanwhile, calculate our total run time
@@ -1427,12 +1429,13 @@ def writeCycles(){
         cyclesMap."${zone+1}" = "${cycle}"
         zone++
     }
-    switches.settingsMap(cyclesMap, 4001)
+    log.debug cyclesMap
+    switches.settingsMap(cyclesMap, 0x4001)
 }
 
 def resume(){
     log.debug 'resume()'
-    settings.switches.zon()
+    settings.switches.setControllerState('resume')
 }
 
 def syncOn(evt){
@@ -1479,7 +1482,7 @@ def waterStop(evt){
         }
         note('pause', "${app.label}: Watering paused - ${evt.displayName} ${cond}", 'c') // set to Paused
     }
-    if (settings.switches.currentSwitch != 'off') {
+    if (settings.switches.controllerState != 'off') {
         runIn(30, subOff)
         settings.switches.off()                                // stop the water
     }
@@ -1497,7 +1500,7 @@ def subOff() {
 def offPauseCheck( evt ) {
     unsubscribe(settings.switches)
     subscribe(settings.switches, 'switch.off', cycleOff)
-    if (/*(switches.currentSwitch != 'off') && */ (settings.switches.currentStatus != 'pause')) { // eat the first off while paused
+    if (/*(switches.currentSwitch != 'off') && */ (settings.switches.latestValue('controllerState') != 'pause')) { // eat the first off while paused
         cycleOff(evt)
     }
 }
@@ -1856,19 +1859,21 @@ def note(String statStr, String msg, String msgType) {
           }
     }
     // finally, send to controller DTH, to change the state and to log important stuff in the event log
+	 //fix for 2021
     if (notifyController) {        // do we really need to send these to the controller?
         // only send status updates to the controller if WE are running, or nobody else is
-        if (atomicState.run || ((settings.switches.currentSwitch == 'off') && (settings.switches.currentStatus != 'pause'))) {
-            settings.switches.notify(statStr, msg)
+        if (atomicState.run || (settings.switches.latestValue('controllerState') == 'off')) {//&& (settings.switches.currentStatus != 'pause'))) {
+            settings.switches.setStatus(msg)
 
         }
         else { // we aren't running, so we don't want to change the status of the controller
             // send the event using the current status of the switch, so we don't change it
             //log.debug "note - direct sendEvent()"
-            settings.switches.notify(settings.switches.currentStatus, msg)
+            settings.switches.setStatus(msg)
 
           }
     }
+	
 }
 
 def sendIt(String msg) {
@@ -2306,7 +2311,7 @@ boolean isWeather(){
 
     // if we have no sensors, rain causes us to skip watering for the day
     if (!anySensors()) {
-        if (settings.switches.latestValue('rainsensor') == 'rainsensoron'){
+        if (settings.switches.latestValue('rainSensor') == 'wet'){
             note('raintoday', "${app.label}: skipping, rain sensor is on", 'd')
             return true
            }
