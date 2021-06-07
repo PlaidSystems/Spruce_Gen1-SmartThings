@@ -131,8 +131,8 @@ def startPage(){
         }
         
         section(''){
-            href(title: 'Scheduler Version 2.6',
-                  description: "Updated 8-2020"
+            href(title: 'Scheduler Version 3.0',
+                  description: "Updated 6-2021"
             )
         }
     }
