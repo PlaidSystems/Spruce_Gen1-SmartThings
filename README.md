@@ -6,7 +6,7 @@ Gen1 Device and SmartApp for new Samsung SmartThings app
 The migration to the newest Samsing app has caused the Gen1 Spruce Controller device tile to break.
 The Spruce Scheduler is also no longer visible for new installs in the app.
 
-### v3 Latest 5-18-2020
+### v3 Latest 5-18-2021
 - MAJOR change to device handler
 - Update Spruce Controller to ST published device, but with minor update to facilitate scheduler
 - Update Spruce Scheduler to work with updated device
